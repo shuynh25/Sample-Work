@@ -1,0 +1,83 @@
+---
+title: "Project"
+output:
+  pdf_document: default
+  word_document: default
+---
+## Shawn Huynh
+## u0906730
+
+# I. Introduction
+## In this study, our primary objective is to see what would happen to an individual's wage if they were given an additional year of education. This is first observed through the use of graphs, where education is our dependent varialbe, and wage is our dependent variable. We also use a regression model to find out what is the return (gain in wage) to education, and is this information enough for us to conclude that there is some sort of correlation here. We also measure other characteristics in the regression model such as gender, whether they are male or female, race, in terms of being White, Black, or Asian, and respective work experience prior. What we are trying to figure out here is if are any differences in the categories of these characteristics, gender, race, experience. The last thing we try to find is if we encounter a homoskedastic problem in our data. At the time the data set was taken, there were actually many more observations technically, but they were not reasonably observational given that certain observations did not fit the criteria for being elligible for education, (i.e. those who were too young). In this data set, we took 4,344 reasonable observations with 12 variables. In the first table that displays the descriptive statistics of our data set, we get a glance of the variables that were measured, as well as their definitions.
+
+# II. Conceptual Framework
+## Our mindset behind choosing the variables that we wanted to look at was that we wanted to see if there was any difference for a white male vs. a white female, or a white male vs. a black male. We also wanted to look and see if gender had any sort of impact on our results.
+
+# III. Data
+```{r}
+library(readr)
+cps <- read_csv("~/Desktop/Econometrics/cps.csv", col_types = cols(X1 = col_skip()))
+```
+
+```{r}
+library(stargazer); stargazer(as.data.frame(cps), title="Descriptive Statistics", type = "text")
+```
+##wage: hourly wage in dollars in 2016, income: wage and salary 
+##income in 2016,age: age in yearseduc: educational attainment in ##yearsfemale: gender, coded 1 for female, 0 for malemale: gender, ##coded 1 for male, 0 for femalewhite: race, coded 1 for white ##workers, 0 for nonwhite workersblack: race, coded 1 for black ##workers, 0 for nonblack workersasian: race, coded 1 for asian ##workers, 0 for nonasian workersothers: ##race,coded1forotherthanwhite,black,andasianworkers,0forwhite,black,andasianworkers
+##union: union status, coded 1 if workers are a member of a labor union, 0 otherwise
+##exper: potential work experience (in years), defined as age minus years of schooling           minus 6. (It is assumed that schooling starts at age 6).
+```{r}
+hist(cps$wage) 
+```
+
+```{r}
+plot(cps$educ, cps$wage, main = "Education vs. Wage",xlab = "Education", ylab = "Wage")
+```
+## The reason we measure wage for both graphs is because it is easier to look at the values for wage. If we used income, the values would not be as easy to look at.
+```{r}
+correlation <- cor(cps)
+library(stargazer); stargazer(correlation, title="Correlation Matrix", type="text")
+```
+## Here we ran a correlation matrix to look at the kinds of independent variables that can be used when we build our model.
+```{r}
+model1<-lm(wage~educ, data=cps)
+model2<-lm(wage~educ+male+white+exper, data=cps)
+model3<-lm(wage~educ+female+white+exper, data=cps)
+model4<-lm(wage~educ+male+black+exper, data=cps)
+model5<-lm(wage~educ+female+asian+exper, data=cps)
+stargazer(model1, model2, model3, model4, model5, title="Regression Results", type="text", out="reg.txt")
+```
+## Here we have our findings of our regression models. We use a total of 5 regression models, each with different variables added. The first thing we point to in our model is being a male. For white males, wage will increase by 3.336. If you are a black male, your wage will increase by 3.314. An interesting thing to point out is for the variables of female and black. First off, both of these variables when added into the model tell us that if you are black or female, your wage would decrease based on these variables. For white females, it is -3.336. For Asian females, it is -3.428. And for blacks, regardless of gender, your wage will decrease by -2.094.
+```{r}
+library(sandwich)
+cov1<-vcovHC(model1, type="HC3"); cov2<-vcovHC(model2, type="HC3"); cov3<-vcovHC(model3, type="HC3"); cov4<-vcovHC(model4, type="HC3"); cov5<-vcovHC(model5, type="HC3")
+robust1<-sqrt(diag(cov1)); robust2<-sqrt(diag(cov2)); robust3<-sqrt(diag(cov3)); robust4<-sqrt(diag(cov4)); robust5<-sqrt(diag(cov5))
+library(stargazer)
+stargazer(model1, model2, model3, model4, model5, se=list(robust1, robust2, robust3, robust4, robust5), title="Regression Results", type= "text")
+```
+## This is the same data set with robust standard errors included. We see a difference in the value of the standard error for some of the variables in comparison to the 1st table.
+
+```{r}
+res1<-lm(wage~educ+male+white+union+exper, data=cps)
+library(lmtest); library(sandwich)
+bptest(res1)
+res1<-lm(wage~educ+male+white+union+exper, data=cps)
+library(car);library(sandwich)#load required packages
+linearHypothesis(res1,c("union=0","exper=0"),vcov=vcovHC(res1,type="HC3"))
+```
+
+```{r}
+res1<-lm(wage~educ+male+white+union+exper, data=cps)
+library(car);library(sandwich)#load required packages
+linearHypothesis(res1,c("union=0","exper=0"),vcov=vcovHC(res1,type="HC3"))
+```
+```{r}
+robust1<-coeftest(res1, vcov=vcovHC(res1, type="HC3")); robust1
+```
+## Here, we ran a BP(Breusch-Pagan) test in order to find any sort of heteroskedasticity. We also ran a heteroskedastic-robust F-test to test joint hypothesis that neither of the variables "union" and "exper" had any effect at a 5% significance level. What we first found from the BP test was the F-statistic at 2125.38, at a p-value of 2.2e^-16. And the heteroskedastic-robust F-test was we also see the same p-value of 2.2e^-16. This means that we can reject the null hypothesis for the BP test, where the error variance is constant, in other words, there is no homoskedasticity because the p-value is very low. We can also reject the null hypothesis that both variables "union" and "exper" are equal to 0 at a 5% significance level. The reason we test a joint hypothesis and BP test is to see if there are any sort of errors in our data set that would skew results in one way or the other.
+
+# Results
+## There values of "union" and "exper" are not statistically significant at a 5% significance level. There is a observational difference between white males and all other variables. Blacks and females are also disadvantaged statistically.
+
+# Conclusion
+## It is evident based on our regression model that an additional year of education alone can have an affect on wage where we will see an increase in wage by 1.747. We also notice from our regression model that when you account for other variables or characteristics such as gender, and even race, can decrease your wage based on the factors.
