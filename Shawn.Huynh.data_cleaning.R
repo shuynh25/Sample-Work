@@ -93,7 +93,7 @@ cps_final <- subset(cps_new, cps_new$exper>=0)
 
 
 ## Check the structure of final data set.
- # If you have 4344 observations of 12 variables, you complete your data set successfully.
+ # Should have 4344 observations of 12 variables.
 
 
 
