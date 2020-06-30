@@ -1,6 +1,3 @@
-## Complete the following codes for your data set. If you provide your codes below each comment,
- # it would be easy to understand your steps.
-
 ## Import raw data into R
 library(readr)
 cps16 <- read_csv("~/Downloads/cps16.csv")
