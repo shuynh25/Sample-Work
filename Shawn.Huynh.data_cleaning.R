@@ -97,8 +97,7 @@ cps_final <- subset(cps_new, cps_new$exper>=0)
 
 
 
-## Export your data set into csv format and save this codes.
- # write.csv(your data frame, "filename.csv") 
- # It will save the data set as csv format in your working directory.
- # The data set you saved will be used for regressions.
+## Export the data set into csv format and save this codes.
+ # write.csv(data frame, "filename.csv") 
+ # The data set can then be used for regressions.
 write.csv(cps_final, "cps.csv")
