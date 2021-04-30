@@ -1,5 +1,5 @@
 # SQLASSIGN
-From a past assignment largely focused on filtering data sample client data
+From a past assignment largely focused on filtering sample client data
 
 # DataCleaning
 Taking raw data used for the regressional analysis for the project and rearanging variables and creating new subsets for specific pieces of information.
