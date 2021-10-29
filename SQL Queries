@@ -37,3 +37,45 @@ WHERE client_id =
 		SELECT client_id
 		FROM clients
 		WHERE name = 'Myworks'
+
+
+
+
+SELECT
+  T1.Jobnumber, T1.Quantity,
+  T3.QtyPerPage,
+  T1.Quantity / T3.QtyPerPage AS PressQuantity,
+  T1.RunSortNumber, T1.OrderType, T1.ConversionNumber, T1.Meccaworkorderflag, T1.RushShipFlag,
+  T2.Ply1Color, T2.Ply2Color, T2.Ply3Color, T2.Ply4Color, T2.Ply5Color, T2.Ply6Color,
+  T3.RunSheetCode,
+  decode(T1.MeccaWorkOrderFlag, 'C', eGainACS.GetRunOnCount(T2.PartNumber, 1), T3.RunOnCount1) as RunOnCount,
+  T3.SLNumber, T3.Partnumber, T3.NumberOfPly,
+  T4.MinPressCount, T4.MaxPressCount,
+  SortPriority(T1.Jobnumber) AS SortPriority
+FROM
+  Orderhistory T1,
+  Printing T2,
+  ProductSpecs T3,
+  SortingParameters T4
+WHERE
+   T1.InProduction = 1 and
+   T1.OnHold = 0 and
+   T1.AutoManualRunFlag = 'A' and
+   T1.RunNumber IS NULL and
+   T1.OrderType <> 'C' and
+   T2.Jobnumber = T1.Jobnumber and
+   T3.Partnumber = T2.Partnumber and
+   T4.RunSortNumber(+) = T1.RunSortNumber
+ORDER BY
+  T1.RunSortNumber, T1.OrderType, T1.ConversionNumber, T1.Meccaworkorderflag, 
+  T2.Ply1Color, T2.Ply2Color, T2.Ply3Color, T2.Ply4Color, T2.Ply5Color, T2.Ply6Color, 
+  T3.RunSheetCode, 17, SortPriority, RushShipFlag DESC, PressQuantity DESC;
+
+
+SELECT
+  Run_Number
+FROM
+  ComboHdr
+WHERE
+  Run_Number BETWEEN :FirstRunnumber AND :LastRunNumber 
+ORDER BY Run_Number
