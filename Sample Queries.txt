@@ -1,0 +1,488 @@
+Order History By Product
+select
+t1.jobnumber,
+getparentidbylevel(t2.customerkey,4) as ABA,
+t2.customerid,
+t2.customername,
+t2.productid as form#,
+t2.productname as description,
+t1.quantity,
+t1.entereddate,
+t1.scheduledshipdate,
+t4.customerattn,
+t4.customeraddress1,
+t4.customeraddress2,
+t4.customercity,
+t4.customerstate,
+t4.customerzipcode,
+t4.customerdistcode,
+t2.priceperthousand,
+decode(t1.rushshipflag, 1, 'Yes', 'No') as rushorder,
+(select shipvia from shipping where rownum=1 and jobnumber=t1.jobnumber) as shipvia
+from
+orderhistory t1,
+printing t2,
+billing t3,
+shipping t4
+where
+t2.internalplant not in ('10','11','99')
+and
+t1.killdate is null
+and
+t2.productid in ('N12567','N12565','N12564','N12566','N12579','N12574','N12575','04348-CH')
+and
+t1.ordertype <> 'C'
+and
+t1.entereddate>='19-jul-2024'
+and
+t1.entereddate<='14-aug-2024'
+and
+t2.jobnumber = t1.jobnumber
+and
+t3.jobnumber = t1.jobnumber
+and
+t4.jobnumber = t1.jobnumber
+
+Order History Detail by Specific Date Range
+select
+To_Char(t1.entereddate, 'MM/DD/YYYY') as orderdate,
+getparentidbylevel(t2.customerkey,5) as store#,
+t2.CUSTOMERID as RC,
+t4.customerstate as state,
+t3.purchaseorder,
+t3.releaseline as poline,
+t1.jobnumber,
+t2.productid as Product,
+t2.productname as Description,
+t1.quantity,
+t3.invoicedextendedprice as extdprice,
+t3.invoicedfreight as delivery,
+t3.invoicedtax as tax,
+t3.invoicedproductaddcharges,
+t3.invoiceddeliveryaddcharges,
+t3.invoicedtotal as total,
+t3.lastinvoice as invoice,
+To_Char(t3.billedupdatedate, 'MM/DD/YYYY') as invoicedate,
+To_Char(t1.shipdate, 'MM/DD/YYYY') as shipdate
+From
+orderhistory t1,
+printing t2,
+billing t3,
+shipping t4
+where
+t1.killdate is null
+and
+t1.billdate is not null
+and
+t2.internalplant not in ('10','11','99')
+and
+t1.shipdate >= '01-feb-2024'
+and
+t1.shipdate <= '30-apr-2024'
+and
+t1.jobnumber = t4.jobnumber
+and
+t1.jobnumber = t3.jobnumber
+and
+t1.jobnumber = t2.jobnumber
+and
+getparentidbylevel(t2.customerkey,1)='6590'
+order by 
+To_Char(t1.entereddate, 'MM/DD/YYYY')
+
+Bank Billing By Specific Cost Center 0016059
+select
+t1.jobnumber,
+t2.customerid,
+t2.customername,
+t3.customerid as billingid,
+t3.lastinvoice as invoice_number,
+t3.invoicedextendedprice as extended_price,
+t3.invoicedproductaddcharges as addproductaddcharges,
+t3.invoicedfreight as billed_freight,
+t3.invoiceddeliveryaddcharges as adddelivery,
+t3.invoicedtax as tax,
+t3.invoicedtotal as total,
+t1.billdate
+from
+orderhistory t1,
+printing t2,
+billing t3
+where
+t2.internalplant not in ('10','11','99')
+and
+t1.killdate is null
+and
+t2.jobnumber = t1.jobnumber
+and
+t3.jobnumber = t1.jobnumber
+and
+t1.shipdate >= '01-Jan-2022'
+and
+t1.shipdate <= '14-May-2024'
+and
+getparentidbylevel(t2.customerkey,1) = '6202'
+and
+t3.customerid = '0016059'
+order by
+t1.billdate
+
+Hierarchy
+select
+getparentidbylevel(t1.key,3) as bankid,
+getparentidbylevel(t1.key,4) as aba,
+getcustomername(getparentkeybylevel(t1.key,3)) as abaname,
+getparentidbylevel(t1.key,11) as div,
+getcustomername(getparentkeybylevel(t1.key,11)) as divname,
+t1.id,
+t1.name,
+getstaticfield(t2.staticdata,'BANK_NAME') as BANK_NAME,
+getstaticfield(t2.staticdata,'PRINT_RT') as PRINT_RT,
+getstaticfield(t2.staticdata,'ACCOUNT') as ACCOUNT,
+getstaticfield(t2.staticdata,'MICR') as MICR,
+getstaticfield(t2.staticdata,'STORE_NO') as STORE_NO,
+getstaticfield(t2.staticdata,'ULID') as ULID,
+t3.id as form#
+from
+customer t1,
+custprodstaticdata t2,
+customerproduct t3,
+custprodcrossreference t4
+where
+t1.status='A'
+and
+t1.type=6
+and
+getparentidbylevel(t1.key,1)='5614'
+and
+t2.customerkey(+)=t1.key
+and
+t4.customerkey = t1.key
+and
+t4.productkey = t3.key
+order by
+getparentidbylevel(t1.key,3),
+getparentidbylevel(t1.key,4),
+getcustomername(getparentkeybylevel(t1.key,3)),
+getparentidbylevel(t1.key,11),
+getcustomername(getparentkeybylevel(t1.key,11)),
+t1.id,
+getproductid(t2.productkey)
+
+Bank Report
+select
+t1.id as form#,
+t1.name as descrption,
+t1.internalplantid || ' - ' || (select name from internalplants where id=t1.internalplantid) as internalplant,
+t2.stocknumber,
+t3.inkcolor1,
+t3.inkcolor2,
+t3.inkcolor3,
+t3.inkcolor4,
+t3.backerinkcolor1,
+t1.status
+from
+customerproduct t1,
+partstocklist t2,
+productink t3
+where
+t1.partnumber = t2.partnumber
+and
+t1.partnumber = t3.partnumber
+and
+t1.id in ('N13162', 'N13163', 'N13164', 'N13165', 'N13166', 'N13167', 'N13168', 'N13180', 'N13568', 'N13715', 'N13716', 'N13717', 'N13718', 'N13719', 'N13720', 'N13721', 'N13724', 'N13725', 'N13729', 'N13730', 'N13732', 'N13733', 'N13734', 'N13735' ,'N13736', 'N13737', 'N13738', 'N13739', 'N13740', 'N13741', 'N13742', 'N13743', 'N13744', 'N13745', 'N13747', 'N13748')
+order by
+t1.id
+
+select distinct
+t1.ID as form#,
+t1.NAME as DESCRIPTION,
+t1.PRODUCTCATEGORY,
+t3.CATEGORYNAME,
+t2.NUMBEROFPLY,
+t1.CONTENTOWNER,
+t1.DATEOFCHANGE,
+t1.REASONFORCHANGE,
+t1.LASTUPDATED,
+t1.STATUS
+from
+CUSTOMERPRODUCT t1,
+PRODUCTSPECS t2,
+PRODUCTCATEGORY t3,
+CUSTPRODCROSSREFERENCE t4
+where
+t1.STATUS = 'A'
+and
+t1.internalplantid not in ('10','11','99')
+and
+t1.PRODUCTCATEGORY = t3.PRODUCTCATEGORY
+and
+t1.PARTNUMBER = t2.PARTNUMBER
+and
+t4.PRODUCTKEY = t1.KEY
+and
+getparentidbylevel(t4.customerkey,1) = '0020'
+order by 
+t1.PRODUCTCATEGORY,
+t1.ID
+
+select
+t1.jobnumber,
+t1.contact_first_name || ' ' || t1.contact_last_name as contactname,
+t1.contact_email_address as contactemailaddress,
+getparentidbylevel(t2.customerkey,4) as aba,
+getcustomername(getparentkeybylevel(t2.customerkey,4)) as abaname,
+t2.customerid,
+t2.customername,
+t2.productid as form#,
+t2.productname as description,
+t1.quantity,
+t4.CUSTOMERADDRESS1 as address1,
+t4.CUSTOMERADDRESS2 as address2,
+t4.customercity as city,
+t4.customerstate as state,
+t4.customerzipcode as zip,
+t1.entereddate,
+t1.scheduledshipdate,
+t1.shipdate,
+t3.invoicedextendedprice as price,
+t3.invoicedproductaddcharges as addproductaddcharges,
+t3.invoicedfreight as freight,
+t3.invoiceddeliveryaddcharges as adddelivery,
+t3.invoicedtax as tax,
+t3.invoicedtotal as invoice,
+t2.priceperthousand,
+decode(t1.rushshipflag, 1, 'Yes', 'No') as rushorder,
+(select shipvia from shipping where rownum=1 and jobnumber=t1.jobnumber) as shipvia
+from
+orderhistory t1,
+printing t2,
+billing t3,
+shipping t4
+where
+t2.internalplant not in ('10','11','99')
+and
+t1.killdate is null
+and
+t1.shipdate>='1-Jan-2023'    /* Change Date */
+and
+t1.shipdate<='31-Dec-2023'   /* Change Date */
+and
+t2.jobnumber = t1.jobnumber
+and
+t3.jobnumber = t1.jobnumber
+and
+getparentidbylevel(t2.customerkey,1) = '4724'    /* Change the Holding Co ID */
+and
+t4.jobnumber = t1.jobnumber
+order by
+t1.shipdate,
+t1.jobnumber
+
+select
+t2.productid,
+t1.jobnumber,
+t1.ordernumber as WebOrder#,
+getparentidbylevel(t2.customerkey,4) as aba,
+getcustomername(getparentkeybylevel(t2.customerkey,4)) as abaname,
+t2.customerid as branch,
+t2.customername,
+t7.shortdescription as category,
+t2.productname,
+t2.internalplant,
+t1.entereddate as orderdate,
+t1.scheduledshipdate as shipdate,
+(select shipvia from shipping where rownum=1 and jobnumber=t1.jobnumber) as shipcode,
+t4.CUSTOMERADDRESS1 as address1,
+t4.CUSTOMERADDRESS2 as address2,
+t4.customercity as city,
+t4.customerstate as state,
+t4.customerzipcode as zip,
+t5.trackingnumber,
+t3.purchaseorder,
+t3.releaseline,
+t1.quantity,
+t3.invoicedextendedprice as priceperorder
+from
+orderhistory t1,
+printing t2,
+billing t3,
+shipping t4,
+cartons t5,
+customerproduct t6,
+subcategory t7
+where
+t2.internalplant not in ('10','11','99')
+and
+t1.killdate is null
+and
+t1.shipdate>='1-Jan-2023'    /* Change Date */
+and
+t1.shipdate<='1-Jan-2024'   /* Change Date */
+and
+getparentidbylevel(t2.customerkey,1) = '4724'
+and
+t2.jobnumber = t1.jobnumber
+and
+t3.jobnumber = t1.jobnumber
+and
+t4.jobnumber = t1.jobnumber
+and
+t5.shipkey = t4.key
+and
+t2.productkey = t6.key
+and
+t7.key = t6.subcategorykey
+
+Product Report
+select
+t1.entereddate,
+t1.scheduledshipdate,
+t1.jobnumber,
+t2.productid as form#,
+t2.customerid,
+t2.customername,
+t1.quantity,
+t3.invoicedunitprice as priceper1000,
+t3.lastinvoice as invoice
+from
+orderhistory t1,
+printing t2,
+billing t3
+where
+t2.internalplant not in ('10','11','99')
+and
+t1.killdate is null
+and
+t2.productid = 'M25091'
+and
+t1.entereddate>='1-aug-2022'
+and
+t1.scheduledshipdate <= '2-oct-2023'
+and
+t2.jobnumber = t1.jobnumber
+and
+t3.jobnumber = t1.jobnumber
+order by
+t1.entereddate
+
+Store Report
+select
+getparentidbylevel(t1.key,4) as aba,
+getparentidbylevel(t1.key,11) as "Store/Division",
+getparentidbylevel(t1.key,5) as branchnumber,
+getcustomername(getparentkeybylevel(t1.key,5)) as branchname,
+t1.address1 as "ADDRESS1",
+t1.address2 as "ADDRESS2",
+t1.city as "CITY",
+t1.state as "STATE",
+t1.zipcode as "ZIP",
+getstaticfield(t2.staticdata,'TranCode') as TranCode,
+getstaticfield(t2.staticdata,'MidNumber') as MidNumber,
+getstaticfield(t2.staticdata,'PRINT_RT') as PRINT_RT,
+getstaticfield(t2.staticdata,'ACCOUNT') as ACCOUNT,
+getstaticfield(t2.staticdata,'USBIP') as USBIP,
+getstaticfield(t2.staticdata,'RolloutDate') as RolloutDate,
+t1.status as "STATUS"
+from
+customer t1,
+CUSTPRODSTATICDATA t2
+where
+t1.status='A'
+and
+t1.key = t2.CUSTOMERKEY
+and
+getparentidbylevel(t1.key,4) = '912170251'
+and
+getparentidbylevel(t1.key,11) = '14'
+order by
+getparentidbylevel(t1.key,5)
+
+Revenue Report
+select 
+getparentidbylevel(t1.customerkey,1) as Holding,
+getcustomername(getparentkeybylevel(t1.customerkey,1)) as Holdingname,
+t1.PRODUCTID,
+t1.PRODUCTNAME,
+count(t2.JOBNUMBER) as Totalorders,
+Sum(t2.QUANTITY) as TotalQuantity,
+Sum(t5.INVOICEDEXTENDEDPRICE) as TOTALPRICE,
+Sum(t5.INVOICEDPRODUCTADDCHARGES) as  TOTALADDPRODUCTADDCHARGES,
+Sum(t5.INVOICEDFREIGHT) as  TOTALFREIGHT,
+Sum(t5.INVOICEDDELIVERYADDCHARGES) as  TOTALADDDELIVERY,
+Sum(t5.INVOICEDTAX) as  TOTALTAX,
+Sum(t5.INVOICEDTOTAL) as  TOTALINVOICE
+from
+PRINTING t1,
+ORDERHISTORY t2,
+SHIPPING t4,
+BILLING t5
+Where
+t1.internalplant not in ('10','11','99')
+and
+t2.billdate>= '01-jan-22'
+and
+t2.billdate<= '24-aug-22'
+and
+t2.killdate is null
+and
+t1.JOBNUMBER = t5.JOBNUMBER
+and
+t1.JOBNUMBER = t4.JOBNUMBER
+and
+t1.JOBNUMBER = t2.JOBNUMBER
+group by
+getparentidbylevel(t1.customerkey,1),
+getcustomername(getparentkeybylevel(t1.customerkey,1)),
+t1.PRODUCTID,
+t1.PRODUCTNAME
+
+Stock Report
+select
+t1.id as form#,
+t1.name as descrption,
+t1.internalplantid || ' - ' || (select name from internalplants where id=t1.internalplantid) as internalplant,
+t3.inkcolor1,
+t3.inkcolor2,
+t3.inkcolor3,
+t3.inkcolor4,
+t3.backerinkcolor1,
+t2.width,
+t2.length,
+t4.runsortnumber,
+t2.runoncount
+from
+customerproduct t1,
+partstocklist t2,
+productink t3,
+productspecs t4
+where
+t2.stocknumber=':varstock'
+and
+t1.status = 'A'
+and
+t1.partnumber = t2.partnumber
+and
+t1.partnumber = t3.partnumber
+and
+t1.partnumber = t4.partnumber
+
+Stock Spec Report
+select distinct
+p.stocknumber,
+p.color,
+s.weight,
+s.grade
+from
+partstocklist p,
+semifinishedspec s
+where
+p.stocknumber = s.semifinishedpart
+and
+s.status = 'A'
+and
+p.color = 'WH/PK'
+and
+s.weight = '24'
+and
+s.grade = 'MICR'
